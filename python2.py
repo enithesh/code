@@ -9,14 +9,17 @@ list
 import sqlite3
 import pandas as pd
 
-# Connect to the SQLite3 database
-conn = sqlite3.connect('/Users/nitheshreddy/Downloads/Data Engineer_ETL Assignment.db')
+# Connect to the SQLite database file
+conn = sqlite3.connect("/Users/nitheshreddy/Downloads/Data Engineer_ETL Assignment.db")
+
+
+
 cursor = conn.cursor()
 
 # SQL query to extract total quantities of each item bought per customer aged 18-35
 sql_query = """
 SELECT c.customer_id, c.age, i.item_name, SUM(o.quantity) AS total_quantity
-FROM customer c
+FROM customers c
 JOIN sales s ON c.customer_id = s.customer_id
 JOIN orders o ON s.sales_id = o.sales_id
 JOIN items i ON o.item_id = i.item_id
@@ -33,4 +36,6 @@ results = cursor.fetchall()
 df = pd.DataFrame(results, columns=['Customer_ID', 'Age', 'Item_Name', 'Total_Quantity'])
 
 # Store the DataFrame to a CSV file with semicolon delimiter
-df.to_csv('output_file_sql.csv', sep=';', index=False)
+
+df.to_csv("/Users/nitheshreddy/Downloadsoutput_file_sql.csv", sep=';', index=False)  
+
