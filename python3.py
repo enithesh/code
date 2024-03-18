@@ -7,18 +7,42 @@ list
 # using pandas
 
 import pandas as pd
+import sqlite3
 
-# Load data from CSV file or any other source
-df = pd.read_csv('/Users/nitheshreddy/Downloads/Data Engineer_ETL Assignment.csv')
+# Connect to the SQLite database file
+conn = sqlite3.connect("/Users/nitheshreddy/Downloads/Data Engineer_ETL Assignment.db")
+
+# Read tables into Pandas DataFrames
+df_customers = pd.read_sql_query("SELECT * FROM customers", conn)
+df_sales = pd.read_sql_query("SELECT * FROM sales", conn)
+df_orders = pd.read_sql_query("SELECT * FROM orders", conn)
+df_items = pd.read_sql_query("SELECT * FROM items", conn)
+
+# Merge tables
+merged_df = pd.merge(df_customers, df_sales, on='customer_id')
+merged_df = pd.merge(merged_df, df_orders, on='sales_id')
+merged_df = pd.merge(merged_df, df_items, on='item_id')
 
 # Filter customers aged 18-35
-filtered_df = df[(df['Age'] >= 18) & (df['Age'] <= 35)]
+merged_df = merged_df[(merged_df['age'] >= 18) & (merged_df['age'] <= 35)]
 
-# Calculate total quantities per item per customer
-grouped_df = filtered_df.groupby(['Customer_ID', 'Item_Name']).agg({'Quantity': 'sum'}).reset_index()
+# Group by customer_id and item_id and sum quantity
+result_df = merged_df.groupby(['customer_id', 'item_name'])['quantity'].sum().reset_index()
 
-# Remove rows with total quantity=0
-filtered_grouped_df = grouped_df[grouped_df['Quantity'] > 0]
+# Convert quantity to integer type to remove decimal points
+result_df['quantity'] = result_df['quantity'].astype(int)
 
-# Store the filtered DataFrame to a CSV file with semicolon delimiter
-filtered_grouped_df.to_csv('output_file_pandas.csv', sep=';', index=False)
+# Filter out items with total quantity = 0
+result_df = result_df[result_df['quantity'] > 0]
+
+# Merge with customers to get age
+result_df = pd.merge(result_df, df_customers[['customer_id', 'age']], on='customer_id')
+
+# Reorder columns
+result_df = result_df[['customer_id', 'age', 'item_name', 'quantity']]
+
+# Rename columns for clarity
+result_df = result_df.rename(columns={'customer_id': 'Customer', 'age': 'Age', 'item_name': 'Item', 'quantity': 'Quantity'})
+
+print(result_df)
+result_df.to_csv("/Users/nitheshreddy/Downloads/Data Engineer_ETL Assignment/output_file_pandas.csv", sep=';', index=False)
